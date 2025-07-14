@@ -9,7 +9,7 @@
 
 * 6.1.75 Kernel based 
 
-* Only Flash on 15.0.0.702
+* To know on which version of OxygenOS you can flash this check the release notes of the respected kernel
  
 * Working Brain 🧠
 ------
