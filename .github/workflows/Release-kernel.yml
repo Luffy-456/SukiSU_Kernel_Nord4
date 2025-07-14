@@ -59,10 +59,14 @@ jobs:
             #### Flash this kernel on 15.0.0.701
             
             **Flasher Recommendation:**
-            -> [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher)
+            * [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
             
             **Manager App:**
-            -> [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/latest)
+            * [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
+
+            **Sufs Module:**
+            * [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
+                            
         run: |
           gh release create "${{ env.tag }}" \
             --title "Kernel Release for ${{ inputs.device_name }} - $(date +'%d %B %Y, %I:%M %p IST')" \
