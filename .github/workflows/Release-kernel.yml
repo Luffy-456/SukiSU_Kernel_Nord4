@@ -55,7 +55,8 @@ jobs:
         env:
           RELEASE_NOTES: |
             ### SukiSU Ultra Kernel for ${{ inputs.device_name }}
-            Flash the appropriate zip file below using a custom recovery.
+            
+            #### Flash this kernel on 15.0.0.701
             
             **Flasher Recommendation:**
             -> [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher)
