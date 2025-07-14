@@ -16,7 +16,7 @@
 
 ## Required Modules
 
-* [Susfs for KernelSU](https://github.com/sidex15/ksu_module_susfs)
+* [Susfs for KernelSU](https://github.com/sidex15/susfs4ksu-module/releases)
 * If you want to use ZRAM download the module form the repective kernel release section **Must Read Caution**
 
 ------
@@ -34,7 +34,7 @@
 
 ### Flash Kernel :
 
-* Use [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher)
+* Use [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
 
 ### Update Your Device Without Losing Root Access  
 
@@ -75,7 +75,7 @@ This ensures a smooth update process without losing root or kernel modifications
 ------
 ## Features
 
-<pre> ✅ SukiSU Ultra - ✅ SUSFS CI - ✅ VFS HOOK - ✅ Magic Mount Support (KPM) - ✅ BBR Support - ✅ ZRAM </pre>
+<pre> ✅ SukiSU Ultra - ✅ SUSFS  - ✅ VFS HOOK - ✅ Magic Mount Support (KPM) - ✅ BBR Support - ✅ ZRAM </pre>
 ------
 
 ------
