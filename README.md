@@ -9,7 +9,7 @@
 
 * 6.1.75 Kernel based 
 
-* To know on which version of OxygenOS you can flash this check the release notes of the respected kernel
+* To know on which version of OxygenOS you can flash. Check the release notes of the respected kernel
  
 * Working Brain 🧠
 ------
