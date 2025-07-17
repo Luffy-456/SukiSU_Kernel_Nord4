@@ -6,7 +6,7 @@ on:
         type: string
         description: "Configuration file"
         required: true
-        default: oneplus_nord_4_v
+        default: oneplus_ace_3v_v.xml
       SUSFS_CI:
         type: choice
         description: "SUSFS module download method"
