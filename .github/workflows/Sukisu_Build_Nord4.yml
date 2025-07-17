@@ -3,10 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       FILE:
-        type: string
+        type: choice
         description: "Configuration file"
         required: true
-        default: oneplus_ace_3v.xml
+        default: oneplus_nord_4_v
+        options:
+          - oneplus_nord_4_v
+          - oneplus_ace_3v_v
       SUSFS_CI:
         type: choice
         description: "SUSFS module download method"
