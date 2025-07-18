@@ -17,7 +17,7 @@ initialize_variables() {
     elif test -d "$GKI_ROOT/drivers"; then
          DRIVER_DIR="$GKI_ROOT/drivers"
     else
-         echo '[ERROR] "drivers/" directory not found.'
+         echo '[ERROR] "drivers/" in $GKI_ROOT directory not found.'
          exit 127
     fi
 
