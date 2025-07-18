@@ -194,6 +194,7 @@ jobs:
             build-essential flex bison libssl-dev \
             libncurses-dev liblz4-tool zlib1g-dev \
             libxml2-utils rsync unzip
+          sudo apt install -y libelf-dev ccache llvm lld
       - name: Restore Ccache
         uses: actions/cache@v3
         with:
