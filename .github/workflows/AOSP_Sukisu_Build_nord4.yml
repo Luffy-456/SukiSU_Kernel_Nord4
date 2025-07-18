@@ -324,6 +324,7 @@ jobs:
           echo "Downloading manifest $file.xml from branch oneplus/$cpu..."
           curl -LO --retry 5 --retry-delay 2 --retry-connrefused "https://raw.githubusercontent.com/OnePlusOSS/kernel_manifest/oneplus/$cpu/$file.xml"
           mv "$file.xml" ".repo/manifests_fallback/${file}.xml"
+
       - name: Add SukiSU Ultra
         run: |
           cd kernel_workspace/kernel_platform
@@ -332,7 +333,7 @@ jobs:
           CUSTOM_TAG="${META#*/}"
           echo "Branch name: $BRANCH_NAME"
           echo "Custom version identifier: $CUSTOM_TAG"
-          curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$BRANCH_NAME"
+          curl -LSs "https://raw.githubusercontent.com/Luffy-456/SukiSU_Kernel_Nord4/refs/heads/main/Scripts/SukiSu_setup.sh" | bash -s "$BRANCH_NAME"
           cd ./KernelSU
           KSU_API_VERSION=$(curl -fsSL "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/$BRANCH_NAME/kernel/Makefile" | \
             grep -m1 "KSU_VERSION_API :=" | awk -F'= ' '{print $2}' | tr -d '[:space:]')
@@ -349,6 +350,7 @@ jobs:
           echo "::group:: Preview of version information in the final Makefile"
           grep -A5 "KSU_VERSION_API" kernel/Makefile
           echo "::endgroup::"
+          
       - name: Apply Patches SukiSU Ultra
         run: |
           cd kernel_workspace
