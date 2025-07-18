@@ -1,4 +1,4 @@
-name: Build OnePlus Nord 4 SukiSU Ultra Kernel
+name: AOSP KERNEL Build OnePlus Nord 4 SukiSU Ultra Kernel
 on:
   workflow_dispatch:
     inputs:
