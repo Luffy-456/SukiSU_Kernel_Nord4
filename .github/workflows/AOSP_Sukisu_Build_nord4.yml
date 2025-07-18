@@ -6,7 +6,7 @@ on:
         type: string
         description: "Configuration file"
         required: true
-        default: oneplus_nord_4_v
+        default: oneplus12_v
       SUSFS_CI:
         type: choice
         description: "SUSFS module download method"
@@ -77,8 +77,7 @@ jobs:
           
           # Define valid combinations with base model only (no _v/_t/_u...)
           declare -A VALID_COMBINATIONS=(
-            ["oneplus_nord_4"]="sm7675 pineapple android14 6.1"
-            ["oneplus_ace_3v"]="sm7675 pineapple android14 6.1"
+            ["oneplus12"]="sm8650 pineapple android14 6.1"
           )
           # Recursively strip "_[a-z]+" suffixes to match base key
           get_combination() {
@@ -226,7 +225,7 @@ jobs:
       - name: Initialize Repo and Sync
         run: |
           mkdir kernel_workspace && cd kernel_workspace
-          repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ env.CPU }} -m ${{ github.event.inputs.FILE }}.xml --depth=1
+          repo init -u https://github.com/Luffy-456/SukiSU_Kernel_Nord4 -m aosp_kernel_manifest.xml --depth=1
           repo sync -c -j$(nproc --all) --no-tags --no-clone-bundle --force-sync
           if [ -e kernel_platform/common/BUILD.bazel ]; then
             sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' kernel_platform/common/BUILD.bazel
