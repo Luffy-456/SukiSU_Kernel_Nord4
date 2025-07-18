@@ -350,7 +350,7 @@ jobs:
           echo "::group:: Preview of version information in the final Makefile"
           grep -A5 "KSU_VERSION_API" kernel/Makefile
           echo "::endgroup::"
-          
+
       - name: Apply Patches SukiSU Ultra
         run: |
           cd kernel_workspace
@@ -358,17 +358,17 @@ jobs:
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
           cd kernel_platform
           echo "Fetching susfs patches"
-          cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
-          cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
-          cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+          cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./msm-kernel/
+          cp ../susfs4ksu/kernel_patches/fs/* ./msm-kernel/fs/
+          cp ../susfs4ksu/kernel_patches/include/linux/* ./msm-kernel/include/linux/
           if [ "${{ github.event.inputs.ZRAM }}" = "true" ]; then
             echo "Fetching zram patches"
-            cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux/
-            cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib/
-            cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto/
-            cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/
+            cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./msm-kernel/include/linux/
+            cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./msm-kernel/lib/
+            cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./msm-kernel/crypto/
+            cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./msm-kernel/lib/
           fi
-          cd ./common
+          cd ./msm-kernel
           GKI_V="${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}"
           SUBLEVEL=$(grep '^SUBLEVEL *=' Makefile | head -n1 | cut -d= -f2 | tr -d ' ')
           if [ "$GKI_V" == "android13-5.15" ] && [ "$SUBLEVEL" -lt 123 ]; then
@@ -400,12 +400,17 @@ jobs:
           cp ../../SukiSU_patch/69_hide_stuff.patch ./
           echo "Applying hide stuff patch"
           patch -p1 -F 3 < 69_hide_stuff.patch
-          echo "hide_stuff_patch complete"
+          echo "hide_stuff_patch complete in common"
+          cd kernel_workspace/kernel_platform/msm-kernel
+          cp ../../SukiSU_patch/69_hide_stuff.patch ./
+          echo "Applying hide stuff patch"
+          patch -p1 -F 3 < 69_hide_stuff.patch
+          echo "hide_stuff_patch complete in msm-kernel"
       # Convert OGKI to GKI, no need to modify dtbo for booting
       - name: Apply Convert HMBIRD_OGKI to HMBIRD_GKI
         if: ${{ env.KERNEL_VERSION == '6.6' }}
         run: |
-          cd kernel_workspace/kernel_platform/common
+          cd kernel_workspace/kernel_platform/msm-kernel
           sed -i '1iobj-y += hmbird_patch.o' drivers/Makefile
           wget https://github.com/Numbersf/Action-Build/raw/SukiSU-Ultra/patches/hmbird_patch.patch
           echo "Applying OGKI to GKI conversion patch"
@@ -414,7 +419,7 @@ jobs:
       - name: Apply VFS
         if: ${{ github.event.inputs.VFS == 'true' }}
         run: |
-          cd kernel_workspace/kernel_platform/common
+          cd kernel_workspace/kernel_platform/msm-kernel
           cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
           echo "Applying vfs patch"
           patch -p1 -F 3 < syscall_hooks.patch
@@ -422,7 +427,7 @@ jobs:
       - name: Apply ZRAM
         if: ${{ github.event.inputs.ZRAM == 'true' }}
         run: |
-          cd kernel_workspace/kernel_platform/common
+          cd kernel_workspace/kernel_platform/msm-kernel
           cp ../../SukiSU_patch/other/zram/zram_patch/${{ env.KERNEL_VERSION }}/lz4kd.patch ./
           echo "Applying lz4kd patch"
           patch -p1 -F 3 < lz4kd.patch || true
@@ -435,7 +440,7 @@ jobs:
       - name: Add Configuration Settings
         run: |
           cd kernel_workspace/kernel_platform
-          CONFIG_FILE=./common/arch/arm64/configs/gki_defconfig
+          CONFIG_FILE=./msm-kernel/arch/arm64/configs/gki_defconfig
           KERNEL_VERSION="${{ env.KERNEL_VERSION }}"
           # SukiSU Ultra configuration
           echo "CONFIG_KSU=y" >> "$CONFIG_FILE"
@@ -492,16 +497,16 @@ jobs:
             echo "CONFIG_ZRAM_WRITEBACK=y" >> "$CONFIG_FILE"
           fi
           # Remove build review
-          sed -i 's/check_defconfig//' ./common/build.config.gki
+          sed -i 's/check_defconfig//' ./msm-kernel/build.config.gki
       # FengChi kernel, based on sm8750, may not work or perform on other CPUs
       - name: Add sched_ext
         if: ${{ github.event.inputs.SCHED == 'true' }}
         run: |
           cd kernel_workspace/kernel_platform/
           git clone https://github.com/HanKuCha/sched_ext.git
-          cp -r ./sched_ext/* ./common/kernel/sched
+          cp -r ./sched_ext/* ./msm-kernel/kernel/sched
           rm -rf ./sched_ext/.git
-          cd common/kernel/sched
+          cd msm-kernel/kernel/sched
       # Custom kernel build time, do not add #1 SMP PREEMPT
       - name: Custom BUILD_TIME
         if: ${{ github.event.inputs.BUILD_TIME != '' && !contains('Ff', github.event.inputs.BUILD_TIME) }}
@@ -511,7 +516,7 @@ jobs:
           echo "KBUILD_BUILD_TIMESTAMP=${DATESTR}" >> "$GITHUB_ENV"
           echo "KBUILD_BUILD_VERSION=1" >> "$GITHUB_ENV"
           cd kernel_workspace/kernel_platform/
-          for f in common/scripts/mkcompile_h msm-kernel/scripts/mkcompile_h; do
+          for f in msm-kernel/scripts/mkcompile_h msm-kernel/scripts/mkcompile_h; do
             if [ -f "$f" ]; then
               echo "Patching mkcompile_h with BUILD_TIME=$DATESTR"
               if grep -q 'UTS_VERSION=' "$f"; then
@@ -525,7 +530,7 @@ jobs:
         if: ${{ (env.KERNEL_VERSION == '5.10' || env.KERNEL_VERSION == '5.15') && github.event.inputs.FAST_BUILD == 'true' }}
         run: |
           cd kernel_workspace/kernel_platform
-          DEFCONFIG=./common/arch/arm64/configs/gki_defconfig
+          DEFCONFIG=./msm-kernel/arch/arm64/configs/gki_defconfig
           echo "Enabling ThinLTO in $DEFCONFIG"
           sed -i 's/^CONFIG_LTO=n/CONFIG_LTO=y/' "$DEFCONFIG"
           sed -i 's/^CONFIG_LTO_CLANG_FULL=y/CONFIG_LTO_CLANG_THIN=y/' "$DEFCONFIG"
@@ -559,7 +564,7 @@ jobs:
           export PATH="/usr/lib/ccache:$PATH"
           export CC="ccache clang"
           sudo apt install -y libelf-dev ccache
-          cd kernel_workspace/kernel_platform/common
+          cd kernel_workspace/kernel_platform/msm-kernel
           MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
             RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
             PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
@@ -583,12 +588,36 @@ jobs:
           fi
       - name: Make AnyKernel3
         run: |
+        
           git clone https://github.com/Numbersf/AnyKernel3 --depth=1
           rm -rf ./AnyKernel3/.git
           mkdir -p kernel_workspace/kernel_platform/out/FinalImageFind/
           dir1=""
           dir2=""
-          image_path=$(find "./kernel_workspace/kernel_platform/common/out/" -name "Image" | head -n 1)
+          # --- Find the compiled kernel Image file ---
+          # Define a variable to hold the directory of the found Image file.
+
+          image_path=""
+          image_dir=$(find "./kernel_workspace/kernel_platform/msm-kernel/out/" -name "Image" | head -n 1)
+          if [ -n "$image_dir" ]; then
+            image_path=$(dirname "$image_dir")/
+            echo "INFO: Found Image file in msm-kernel path."
+
+          elif image_dir=$(find "./kernel_workspace/kernel_platform/common/out/" -name "Image" | head -n 1); [ -n "$image_dir" ]; then
+            image_dir=$(dirname "$image_dir")/
+            echo "INFO: Found Image file in common path."
+
+          elif image_dir=$(find "./kernel_workspace/kernel_platform/out/" -name "Image" | head -n 1); [ -n "$image_dir" ]; then
+            image_dir=$(dirname "$image_dir")/
+            echo "INFO: Found Image file in top-level out path."
+
+          else
+            echo "ERROR: Kernel Image file not found in any expected location. Build failed." >&2
+            exit 1
+          fi
+
+          echo "INFO: Image file located in: $image_dir"
+
           if [ -n "$image_path" ]; then
             dir1=$(dirname "$image_path")/
             echo "Using unified path for make build, successfully found Image file"
