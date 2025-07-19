@@ -5,7 +5,7 @@
   <default remote="clo-la" revision="dummy_revision" sync-c="true" sync-tags="false"/>
   <remote fetch="https://github.com/stuffbykoko" name="origin"/>
 
-  <project remote="origin" name="device_oneplus_sm7675-common" path="kernel_platform/common" revision="lineage-22.2">
+  <project remote="origin" name="kernel_oneplus_sm8650" path="kernel_platform/common" revision="lineage-22.2">
     <linkfile dest="kernel_platform/.source_date_epoch_dir" src="."/>
   </project>
 
