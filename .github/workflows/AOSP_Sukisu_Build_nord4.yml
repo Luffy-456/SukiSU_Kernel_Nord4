@@ -531,7 +531,7 @@ jobs:
             fi
           done
       - name: Enable lto=thin For FAST
-        if: ${{ (env.KERNEL_VERSION == '5.10' || env.KERNEL_VERSION == '5.15') && github.event.inputs.FAST_BUILD == 'true' }}
+        if: ${{ (env.KERNEL_VERSION == '5.10' || env.KERNEL_VERSION == '6.1') && github.event.inputs.FAST_BUILD == 'true' }}
         run: |
           cd kernel_workspace/kernel_platform
           DEFCONFIG=./msm-kernel/arch/arm64/configs/gki_defconfig
