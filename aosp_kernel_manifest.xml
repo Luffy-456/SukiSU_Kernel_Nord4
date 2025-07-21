@@ -3,8 +3,8 @@
 
   <remote fetch="https://git.codelinaro.org/clo/la" name="clo-la"/>
   <default remote="clo-la" revision="dummy_revision" sync-c="true" sync-tags="false"/>
-  <remote fetch="https://github.com/stuffbykoko" name="origin"/>
-  <remote fetch="https://github.com/Luffy-456" name="origin"/>
+  <remote fetch="https://github.com/stuffbykoko" name="koko"/>
+  <remote fetch="https://github.com/Luffy-456" name="luffy"/>
 
   <project remote="origin" name="device_oneplus_sm7675-common" path="kernel_platform/common" revision="lineage-22.2">
     <linkfile dest="kernel_platform/.source_date_epoch_dir" src="."/>
