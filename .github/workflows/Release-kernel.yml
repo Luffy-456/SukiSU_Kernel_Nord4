@@ -2,7 +2,7 @@ name: Create Kernel Release
 
 on:
   workflow_run:
-    workflows: ["Build OnePlus Nord 4 SukiSU Ultra"] # Removed trailing space
+    workflows: ["Build OnePlus Nord 4 SukiSU Ultra"]
     types:
       - completed
 
