@@ -61,7 +61,33 @@ on:
         default: false
 
 jobs:
+# JOB 1: NOTIFY THAT THE WORKFLOW HAS STARTED
+  notify_start:
+    name: Notify Start 🚀
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get current time
+        id: get_time
+        run: echo "timestamp=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+
+      - name: Send Telegram message on start
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            *🚀 Build Initiated*
+            ------------------------------------
+            *Workflow:* `${{ github.workflow }}`
+            *Run:* `#${{ github.run_number }}`
+            *Triggered by:* `${{ github.triggering_actor }}`
+            *Commit:* `${{ github.sha }}`
+            *Started at:* `${{ steps.get_time.outputs.timestamp }}` IST
+            ------------------------------------
+            [View Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
   build:
+    needs: notify_start
     name: ${{ github.event.inputs.FAST_BUILD == 'true' && ' [FAST]' || '' }}${{ github.event.inputs.SCHED == 'true' && ' [SCHED]' || '' }}${{ github.event.inputs.ZRAM == 'true' && ' [ZRAM]' || '' }}For ${{ github.event.inputs.FILE }} ${{ github.event.inputs.SUFFIX }}
     runs-on: ubuntu-latest
     env:

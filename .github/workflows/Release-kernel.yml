@@ -1,18 +1,148 @@
 name: Create Kernel Release
+
 on:
-  workflow_dispatch:
-    inputs:
-      run_id:
-        description: 'The ID of the successful build run to release from'
-        required: true
-      device_name:
-        description: 'Device name for the release (e.g., oneplus_nord_4_v)'
-        required: true
-        default: 'oneplus_nord_4_v'
+  workflow_run:
+    workflows: ["Build OnePlus Nord 4 SukiSU Ultra "]
+    types:
+      - completed
+
+if: vars.RUN_AUTOMATION_CHAIN == 'true'
 
 jobs:
+  # JOB 1: Checks if the previous workflow was successful
+  check_trigger:
+    name: Verify Patch Result
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if patch workflow was successful
+        if: github.event.workflow_run.conclusion != 'success'
+        run: |
+          echo "Triggering patch workflow was not successful (conclusion: ${{ github.event.workflow_run.conclusion }}). Stopping."
+          exit 1
+
+  # JOB 2: Performs the release. It depends on JOB 1.
+    release:
+    name: Create GitHub Release
+    needs: check_trigger
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      TZ: Asia/Kolkata
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # This 'outputs' block makes the release tag available to other jobs
+    outputs:
+      release_tag: ${{ steps.generate_tag.outputs.tag }}
+
+    steps:
+      - name: Send Start Notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            *🚀 Release Process Started*
+            ------------------------------------
+            This is the final step: creating the GitHub Release.
+            [View Release Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate IST Release Tag
+        id: generate_tag
+        run: |
+          TAG="oneplus_nord_3-$(date +'%Y-%m-%d_%H-%M')-IST"
+          echo "Generated Tag: $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Download Patched Artifacts
+        run: |
+          echo "Downloading artifacts from Run ID ${{ github.event.workflow_run.id }}..."
+          gh run download ${{ github.event.workflow_run.id }} --dir ./downloaded-artifacts --repo ${{ github.repository }}
+
+      - name: Display Downloaded Artifact Structure
+        run: ls -R ./downloaded-artifacts
+
+      - name: Zip Each Artifact Individually
+        run: |
+          mkdir ./final-zips
+          for dir in ./downloaded-artifacts/*; do
+            if [ -d "$dir" ]; then
+              ARTIFACT_NAME=$(basename "$dir")
+              (cd "$dir" && zip -r9 "$GITHUB_WORKSPACE/final-zips/${ARTIFACT_NAME}.zip" .)
+            fi
+          done
+
+      - name: Create GitHub Release and Upload Zips
+        env:
+          RELEASE_NOTES: |
+            ### SukiSU Ultra Kernel for OnePlus Nord 4
+            
+            #### Flash this kernel on 15.0.0.701
+            
+            **Flasher Recommendation:**
+            * [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
+            
+            **Manager App:**
+            * [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
+
+            **Sufs Module:**
+            * [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
+        run: |
+          # Use the tag generated in the 'generate_tag' step
+          gh release create "${{ steps.generate_tag.outputs.tag }}" \
+            --title "Kernel Release - $(date +'%d %B %Y')" \
+            --notes "$RELEASE_NOTES" \
+            ./final-zips/*.zip
+            
+  # JOB 3: Sends the final notification. It depends on JOB 2.
+  notify_result:
+    name: Notify Final Release Status
+    needs: release
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Final Release Notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ needs.release.result == 'success' && secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES || secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            ${{ needs.release.result == 'success' && format('🎉 *New Kernel Release!*
+            ------------------------------------
+            A new kernel has been successfully built, patched, and released.
+
+            *Release Tag:* `{0}`
+            ------------------------------------
+            [⬇️ Download from GitHub Releases](https://github.com/{1}/releases/tag/{0})', needs.release.outputs.release_tag, github.repository) || '' }}
+
+            ${{ needs.release.result == 'failure' && format('❌ *Release Failed!*
+            ------------------------------------
+            The final step of creating the GitHub Release failed. Check logs for details.
+            [View Logs](https://github.com/{0}/actions/runs/{1})', github.repository, github.run_id) || '' }}
+
+            ${{ needs.release.result == 'cancelled' && format('🚫 *Release Cancelled*
+            ------------------------------------
+            The final release process was cancelled.
+            [View Run](https://github.com/{0}/actions/runs/{1})', github.repository, github.run_id) || '' }}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   release:
-    name: Create Release
+    name: Create GitHub Release
+    needs: check_trigger
     runs-on: ubuntu-latest
     permissions:
       contents: write
