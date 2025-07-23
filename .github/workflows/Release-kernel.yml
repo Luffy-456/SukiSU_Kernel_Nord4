@@ -54,7 +54,7 @@ jobs:
       - name: Generate IST Release Tag
         id: generate_tag
         run: |
-          TAG="oneplus_nord_3-$(date +'%Y-%m-%d_%H-%M')-IST"
+          TAG="oneplus_nord_4-$(date +'%Y-%m-%d_%H-%M')-IST"
           echo "Generated Tag: $TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
