@@ -2,7 +2,7 @@ name: Create Kernel Release
 
 on:
   workflow_run:
-    workflows: ["Build OnePlus Nord 4 SukiSU Ultra "]
+    workflows: ["Build OnePlus Nord 4 SukiSU Ultra"] # Removed trailing space
     types:
       - completed
 
@@ -11,17 +11,17 @@ if: secrets.RUN_AUTOMATION_CHAIN == 'true'
 jobs:
   # JOB 1: Checks if the previous workflow was successful
   check_trigger:
-    name: Verify Patch Result
+    name: Verify Build Result
     runs-on: ubuntu-latest
     steps:
-      - name: Check if patch workflow was successful
+      - name: Check if build workflow was successful
         if: github.event.workflow_run.conclusion != 'success'
         run: |
-          echo "Triggering patch workflow was not successful (conclusion: ${{ github.event.workflow_run.conclusion }}). Stopping."
+          echo "Triggering workflow was not successful (conclusion: ${{ github.event.workflow_run.conclusion }}). Stopping."
           exit 1
 
   # JOB 2: Performs the release. It depends on JOB 1.
-    release:
+  release:
     name: Create GitHub Release
     needs: check_trigger
     runs-on: ubuntu-latest
@@ -31,10 +31,8 @@ jobs:
     env:
       TZ: Asia/Kolkata
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    # This 'outputs' block makes the release tag available to other jobs
     outputs:
       release_tag: ${{ steps.generate_tag.outputs.tag }}
-
     steps:
       - name: Send Start Notification
         uses: appleboy/telegram-action@master
@@ -92,7 +90,6 @@ jobs:
             **Sufs Module:**
             * [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
         run: |
-          # Use the tag generated in the 'generate_tag' step
           gh release create "${{ steps.generate_tag.outputs.tag }}" \
             --title "Kernel Release - $(date +'%d %B %Y')" \
             --notes "$RELEASE_NOTES" \
