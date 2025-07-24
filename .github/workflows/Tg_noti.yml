@@ -1,0 +1,56 @@
+name: Send Build Notifications
+
+on:
+  workflow_run:
+    workflows: ["Build OnePlus Nord 4 SukiSU Ultra Kernel"] # The 'name:' from your build file
+    types:
+      - completed # This trigger runs for success, failure, and cancellations
+
+jobs:
+  notify:
+    name: Send Build Notification 🔔
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Workflow Inputs
+        id: get_inputs
+        if: success() || failure() # Only run if inputs are needed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          API_URL="https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID"
+          response=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "$API_URL")
+          file=$(echo "$response" | jq -r '.triggering_actor.login + "/" + .display_title' | sed 's/For //')
+          echo "build_info=$file" >> $GITHUB_OUTPUT
+
+      - name: Notify on Success
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            *✅ Build Successful*
+            ------------------------------------
+            *Commit:* `${{ github.event.workflow_run.head_sha }}`
+            ------------------------------------
+            The artifact is ready for the patching workflow.
+            [View Completed Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }})
+
+      - name: Notify on Failure or Cancellation
+        if: ${{ github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'cancelled' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            ${{ github.event.workflow_run.conclusion == 'failure' && '❌ *Build Failed*' || '🚫 *Build Cancelled*' }}
+            ------------------------------------
+            *Configuration:* `${{ steps.get_inputs.outputs.build_info }}`
+            *Commit:* `${{ github.event.workflow_run.head_sha }}`
+            ------------------------------------
+            Please check the logs for details.
+            [View Completed Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }})
