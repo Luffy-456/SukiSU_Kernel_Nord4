@@ -78,6 +78,8 @@ jobs:
       - name: Create GitHub Release and Upload Zips
         env:
           RELEASE_NOTES: |
+            ## EOL UPDATE FOR 15.0.0.701
+            
             ### SukiSU Ultra Kernel for OnePlus Nord 4
             
             #### Flash this kernel on 15.0.0.701
