@@ -1,127 +1,159 @@
-name: Create Kernel Release
-
-# This workflow is triggered manually
+name: Create Kernel Release GitHub
 on:
-  workflow_dispatch:
-    inputs:
-      build_run_url:
-        description: 'URL of the successful build run (e.g., https://github.com/user/repo/actions/runs/12345)'
-        required: true
-        type: string
+  workflow_dispatch:
+    inputs:
+      build_run_url:
+        description: 'URL of the successful build run (e.g., https://github.com/user/repo/actions/runs/12345)'
+        required: true
+        type: string
 
 jobs:
-  release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write  # To create releases
-      actions: read    # To download artifacts from other runs
-    env:
-      TZ: Asia/Kolkata
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    outputs:
-      release_tag: ${{ steps.generate_tag.outputs.tag }}
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      TZ: Asia/Kolkata
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      release_tag: ${{ steps.generate_tag.outputs.tag }}
+      telegram_notes: ${{ steps.prep_telegram_notes.outputs.notes }} # <-- CHANGE: Outputting the special Telegram notes
 
-    steps:
-      - name: 1. Parse Run ID from URL
-        id: parse_url
-        run: |
-          BUILD_URL="${{ github.event.inputs.build_run_url }}"
-          if [[ ! "$BUILD_URL" =~ ^https://github.com/.*/actions/runs/[0-9]+$ ]]; then
-            echo "::error::Invalid GitHub Actions run URL provided."
-            exit 1
-          fi
-          RUN_ID=$(basename "$BUILD_URL")
-          echo "Extracted Run ID: $RUN_ID"
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+    steps:
+      - name: 1. Parse Run ID from URL
+        id: parse_url
+        run: |
+          BUILD_URL="${{ github.event.inputs.build_run_url }}"
+          if [[ ! "$BUILD_URL" =~ ^https://github.com/.*/actions/runs/[0-9]+$ ]]; then
+            echo "::error::Invalid GitHub Actions run URL provided."
+            exit 1
+          fi
+          RUN_ID=$(basename "$BUILD_URL")
+          echo "Extracted Run ID: $RUN_ID"
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
-      - name: 2. Send Start Notification
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          format: markdown
-          message: |
-            *🚀 Manual Release Process Started*
-            ------------------------------------
-            Downloading artifacts from Run ID: `${{ steps.parse_url.outputs.run_id }}`
-            [View Release Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+      - name: 2. Send Start Notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            *🚀 Manual Release Process Started*
+            ------------------------------------
+            Downloading artifacts from Run ID: `${{ steps.parse_url.outputs.run_id }}`
+            [View Release Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-      - name: 3. Checkout Repository
-        uses: actions/checkout@v4
+      - name: 3. Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: 4. Generate IST Release Tag
-        id: generate_tag
-        run: |
-          TAG="oneplus_nord_4-$(date +'%Y-%m-%d_%H-%M')-IST"
-          echo "Generated Tag: $TAG"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: 4. Generate IST Release Tag
+        id: generate_tag
+        run: |
+          TAG="oneplus_nord_4-$(date +'%Y-%m-%d_%H-%M')-IST"
+          echo "Generated Tag: $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      - name: 5. Download Build Artifacts
-        run: |
-          echo "Downloading artifacts from Run ID ${{ steps.parse_url.outputs.run_id }}..."
-          gh run download ${{ steps.parse_url.outputs.run_id }} --dir ./downloaded-artifacts --repo ${{ github.repository }}
+      - name: 5. Download Build Artifacts
+        run: |
+          echo "Downloading artifacts from Run ID ${{ steps.parse_url.outputs.run_id }}..."
+          gh run download ${{ steps.parse_url.outputs.run_id }} --dir ./downloaded-artifacts --repo ${{ github.repository }}
 
-      - name: 6. Display Downloaded Artifact Structure
-        run: ls -R ./downloaded-artifacts
+      - name: 6. Display Downloaded Artifact Structure
+        run: ls -R ./downloaded-artifacts
 
-      - name: 7. Zip Each Artifact Individually
-        run: |
-          mkdir ./final-zips
-          for dir in ./downloaded-artifacts/*; do
-            if [ -d "$dir" ]; then
-              ARTIFACT_NAME=$(basename "$dir")
-              (cd "$dir" && zip -r9 "$GITHUB_WORKSPACE/final-zips/${ARTIFACT_NAME}.zip" .)
-            fi
-          done
+      - name: 7. Zip Each Artifact Individually
+        run: |
+          mkdir ./final-zips
+          for dir in ./downloaded-artifacts/*; do
+            if [ -d "$dir" ]; then
+              ARTIFACT_NAME=$(basename "$dir")
+              (cd "$dir" && zip -r9 "$GITHUB_WORKSPACE/final-zips/${ARTIFACT_NAME}.zip" .)
+            fi
+          done
+      
+      # <-- CHANGE: This step now ONLY prepares notes for the GitHub Release page.
+      - name: 8. Prepare GitHub Release Notes
+        id: prep_github_notes
+        run: |
+          NOTES=$(cat <<'EOF'
+          ### SukiSU Ultra Kernel for OnePlus Nord 4
+          
+          #### Flash this kernel on 15.0.0.701
+          
+          **Flasher Recommendation:**
+          * [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
+          
+          **Manager App:**
+          * [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
 
-      - name: 8. Create GitHub Release and Upload Zips
-        env:
-          RELEASE_NOTES: |
-            ## EOL UPDATE FOR 15.0.0.701
-            
-            ### SukiSU Ultra Kernel for OnePlus Nord 4
-            
-            #### Flash this kernel on 15.0.0.701
-            
-            **Flasher Recommendation:**
-            * [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
-            
-            **Manager App:**
-            * [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
+          **Sufs Module:**
+          * [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
+          EOF
+          )
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-            **Sufs Module:**
-            * [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
-        run: |
-          gh release create "${{ steps.generate_tag.outputs.tag }}" \
-            --title "Kernel Release - $(date +'%d %B %Y')" \
-            --notes "$RELEASE_NOTES" \
-            ./final-zips/*.zip
-  
-  # This second job sends the final notification
-  notify_result:
-    name: Notify Final Release Status
-    needs: release
-    if: always() # This ensures it runs even if the release job fails
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send Final Release Notification
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ needs.release.result == 'success' && secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES || secrets.TELEGRAM_CHAT_ID_PERSONAL }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          format: markdown
-          message: |
-            ${{ needs.release.result == 'success' && format('🎉 *New Kernel Release!*
-            ------------------------------------
-            A new kernel has been successfully built, patched, and released.
+      # <-- CHANGE: This is a NEW step to prepare the separate, Telegram-safe notes.
+      - name: 9. Prepare Telegram Notification Notes
+        id: prep_telegram_notes
+        run: |
+          NOTES=$(cat <<'EOF'
+          *SukiSU Ultra Kernel for OnePlus Nord 4*
+          
+          *Flash this kernel on 15.0.0.702*
+          
+          *Flasher Recommendation:*
+          • [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
+          
+          *Manager App:*
+          • [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
 
-            *Release Tag:* `{0}`
-            ------------------------------------
-            [⬇️ Download from GitHub Releases](https://github.com/{1}/releases/tag/{0})', needs.release.outputs.release_tag, github.repository) || '' }}
+          *Sufs Module:*
+          • [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
+          EOF
+          )
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-            ${{ needs.release.result == 'failure' && format('❌ *Release Failed!*
-            ------------------------------------
-            The final step of creating the GitHub Release failed. Check logs for details.
-            [View Logs](https://github.com/{0}/actions/runs/{1})', github.repository, github.run_id) || '' }}
+      # <-- CHANGE: This step now uses the GitHub-specific notes from step 8.
+      - name: 10. Create GitHub Release and Upload Zips
+        run: |
+          gh release create "${{ steps.generate_tag.outputs.tag }}" \
+            --title "Kernel Release - $(date +'%d %B %Y')" \
+            --notes "${{ steps.prep_github_notes.outputs.notes }}" \
+            ./final-zips/*.zip
+  
+  notify_result:
+    name: Notify Final Release Status
+    needs: release
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Final Release Notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ needs.release.result == 'success' && secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES && secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          # <-- CHANGE: The message now correctly uses the special 'telegram_notes' output.
+          message: |
+            ${{ needs.release.result == 'success' && format('🎉 *New Kernel Release!*
+            ------------------------------------
+            A new kernel for *OnePlus Nord 4* has been successfully released.
+
+            {2}
+
+            *Release Tag:* `{0}`
+            ------------------------------------
+            [⬇️ Download from GitHub Releases](https://github.com/{1}/releases/tag/{0})', needs.release.outputs.release_tag, github.repository, needs.release.outputs.telegram_notes) || '' }}
+
+            ${{ needs.release.result == 'failure' && format('❌ *Release Failed!*
+            ------------------------------------
+            The final step of creating the GitHub Release failed. Check the logs for details.
+            [View Logs](https://github.com/{0}/actions/runs/{1})', github.repository, github.run_id) || '' }}
             
