@@ -21,18 +21,18 @@ jobs:
       release_tag: ${{ steps.generate_tag.outputs.tag }}
       telegram_notes: ${{ steps.prep_telegram_notes.outputs.notes }} # <-- CHANGE: Outputting the special Telegram notes
 
-    steps:
-      - name: 1. Parse Run ID from URL
-        id: parse_url
-        run: |
-          BUILD_URL="${{ github.event.inputs.build_run_url }}"
-          if [[ ! "$BUILD_URL" =~ ^https://github.com/.*/actions/runs/[0-9]+$ ]]; then
-            echo "::error::Invalid GitHub Actions run URL provided."
-            exit 1
-          fi
-          RUN_ID=$(basename "$BUILD_URL")
-          echo "Extracted Run ID: $RUN_ID"
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+    steps:
+      - name: 1. Parse Run ID from URL
+        id: parse_url
+        run: |
+          BUILD_URL="${{ github.event.inputs.build_run_url }}"
+          if [[ ! "$BUILD_URL" =~ ^https://github.com/.*/actions/runs/[0-9]+$ ]]; then
+            echo "::error::Invalid GitHub Actions run URL provided."
+            exit 1
+          fi
+          RUN_ID=$(basename "$BUILD_URL")
+          echo "Extracted Run ID: $RUN_ID"
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
       - name: 2. Send Start Notification
         uses: appleboy/telegram-action@master
@@ -137,7 +137,7 @@ jobs:
       - name: Send Final Release Notification
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ needs.release.result == 'success' && secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES && secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          to: ${{ needs.release.result == 'success' && secrets.TELEGRAM_CHAT_ID_PERSONAL && secrets.TELEGRAM_CHAT_ID_PERSONAL }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           # <-- CHANGE: The message now correctly uses the special 'telegram_notes' output.
