@@ -9,7 +9,7 @@ on:
 
 
 jobs:
-  # JOB 1: Checks if the previous workflow was successful
+    # JOB 1: Checks if the previous workflow was successful
   check_trigger:
     if: secrets.RUN_AUTOMATION_CHAIN == 'true'
     name: Verify Build Result
@@ -20,6 +20,7 @@ jobs:
         run: |
           echo "Triggering workflow was not successful (conclusion: ${{ github.event.workflow_run.conclusion }}). Stopping."
           exit 1
+          
 
   # JOB 2: Performs the release. It depends on JOB 1.
   release:
