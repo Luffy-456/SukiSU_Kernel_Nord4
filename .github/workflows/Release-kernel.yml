@@ -1,67 +1,71 @@
 name: Create Kernel Release
 
+# This workflow is triggered manually
 on:
-  workflow_run:
-    workflows: ["Build OnePlus Nord 4 SukiSU Ultra Kernel"]
-    types:
-      - completed
+  workflow_dispatch:
+    inputs:
+      build_run_url:
+        description: 'URL of the successful build run (e.g., https://github.com/user/repo/actions/runs/12345)'
+        required: true
+        type: string
 
 jobs:
-  check_trigger:
-    if: secrets.RUN_AUTOMATION_CHAIN == 'true'
-    name: Verify Build Result
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check if build workflow was successful
-        if: github.event.workflow_run.conclusion != 'success'
-        run: |
-          echo "Triggering workflow was not successful (conclusion: ${{ github.event.workflow_run.conclusion }}). Stopping."
-          exit 1
-
   release:
     name: Create GitHub Release
-    needs: check_trigger
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      actions: read
+      contents: write  # To create releases
+      actions: read    # To download artifacts from other runs
     env:
       TZ: Asia/Kolkata
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       release_tag: ${{ steps.generate_tag.outputs.tag }}
+
     steps:
-      - name: Send Start Notification
+      - name: 1. Parse Run ID from URL
+        id: parse_url
+        run: |
+          BUILD_URL="${{ github.event.inputs.build_run_url }}"
+          if [[ ! "$BUILD_URL" =~ ^https://github.com/.*/actions/runs/[0-9]+$ ]]; then
+            echo "::error::Invalid GitHub Actions run URL provided."
+            exit 1
+          fi
+          RUN_ID=$(basename "$BUILD_URL")
+          echo "Extracted Run ID: $RUN_ID"
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+
+      - name: 2. Send Start Notification
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           message: |
-            *🚀 Release Process Started*
+            *🚀 Manual Release Process Started*
             ------------------------------------
-            This is the final step: creating the GitHub Release.
+            Downloading artifacts from Run ID: `${{ steps.parse_url.outputs.run_id }}`
             [View Release Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-      - name: Checkout Repository
+      - name: 3. Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Generate IST Release Tag
+      - name: 4. Generate IST Release Tag
         id: generate_tag
         run: |
           TAG="oneplus_nord_4-$(date +'%Y-%m-%d_%H-%M')-IST"
           echo "Generated Tag: $TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      - name: Download Patched Artifacts
+      - name: 5. Download Build Artifacts
         run: |
-          echo "Downloading artifacts from Run ID ${{ github.event.workflow_run.id }}..."
-          gh run download ${{ github.event.workflow_run.id }} --dir ./downloaded-artifacts --repo ${{ github.repository }}
+          echo "Downloading artifacts from Run ID ${{ steps.parse_url.outputs.run_id }}..."
+          gh run download ${{ steps.parse_url.outputs.run_id }} --dir ./downloaded-artifacts --repo ${{ github.repository }}
 
-      - name: Display Downloaded Artifact Structure
+      - name: 6. Display Downloaded Artifact Structure
         run: ls -R ./downloaded-artifacts
 
-      - name: Zip Each Artifact Individually
+      - name: 7. Zip Each Artifact Individually
         run: |
           mkdir ./final-zips
           for dir in ./downloaded-artifacts/*; do
@@ -71,7 +75,7 @@ jobs:
             fi
           done
 
-      - name: Create GitHub Release and Upload Zips
+      - name: 8. Create GitHub Release and Upload Zips
         env:
           RELEASE_NOTES: |
             ## EOL UPDATE FOR 15.0.0.701
@@ -93,11 +97,12 @@ jobs:
             --title "Kernel Release - $(date +'%d %B %Y')" \
             --notes "$RELEASE_NOTES" \
             ./final-zips/*.zip
-
+  
+  # This second job sends the final notification
   notify_result:
     name: Notify Final Release Status
     needs: release
-    if: always()
+    if: always() # This ensures it runs even if the release job fails
     runs-on: ubuntu-latest
     steps:
       - name: Send Final Release Notification
@@ -119,9 +124,4 @@ jobs:
             ------------------------------------
             The final step of creating the GitHub Release failed. Check logs for details.
             [View Logs](https://github.com/{0}/actions/runs/{1})', github.repository, github.run_id) || '' }}
-
-            ${{ needs.release.result == 'cancelled' && format('🚫 *Release Cancelled*
-            ------------------------------------
-            The final release process was cancelled.
-            [View Run](https://github.com/{0}/actions/runs/{1})', github.repository, github.run_id) || '' }}
             
