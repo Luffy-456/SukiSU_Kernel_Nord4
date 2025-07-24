@@ -6,10 +6,7 @@ on:
     types:
       - completed
 
-
-
 jobs:
-    # JOB 1: Checks if the previous workflow was successful
   check_trigger:
     if: secrets.RUN_AUTOMATION_CHAIN == 'true'
     name: Verify Build Result
@@ -20,9 +17,7 @@ jobs:
         run: |
           echo "Triggering workflow was not successful (conclusion: ${{ github.event.workflow_run.conclusion }}). Stopping."
           exit 1
-          
 
-  # JOB 2: Performs the release. It depends on JOB 1.
   release:
     name: Create GitHub Release
     needs: check_trigger
@@ -47,7 +42,7 @@ jobs:
             ------------------------------------
             This is the final step: creating the GitHub Release.
             [View Release Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -98,8 +93,7 @@ jobs:
             --title "Kernel Release - $(date +'%d %B %Y')" \
             --notes "$RELEASE_NOTES" \
             ./final-zips/*.zip
-            
-  # JOB 3: Sends the final notification. It depends on JOB 2.
+
   notify_result:
     name: Notify Final Release Status
     needs: release
@@ -130,3 +124,4 @@ jobs:
             ------------------------------------
             The final release process was cancelled.
             [View Run](https://github.com/{0}/actions/runs/{1})', github.repository, github.run_id) || '' }}
+            
