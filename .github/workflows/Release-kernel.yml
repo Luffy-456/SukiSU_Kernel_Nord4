@@ -103,7 +103,7 @@ jobs:
         id: prep_telegram_notes
         run: |
           NOTES=$(cat <<'EOF'
-          * EOL RELEASE FOR 15.0.0.702 KERNEL 
+          *EOL RELEASE FOR 15.0.0.702 KERNEL*
           
           *SukiSU Ultra Kernel for OnePlus Nord 4*
           
