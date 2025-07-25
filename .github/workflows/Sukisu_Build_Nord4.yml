@@ -401,7 +401,7 @@ jobs:
           SUBLEVEL=$(grep '^SUBLEVEL *=' Makefile | head -n1 | cut -d= -f2 | tr -d ' ')
           if [ "$GKI_V" == "android13-5.15" ] && [ "$SUBLEVEL" -lt 123 ]; then
             echo "Fixing some potential legacy issues for kernel versions 5.15.0 to 5.15.123"
-            curl -Lo fix_5.15.legacy.patch --retry 5 --retry-delay 2 --retry-connrefused https://raw.githubusercontent.com/Numbersf/Action-Build/SukiSU-Ultra/patches/fix_5.15.legacy
+            curl -Lo fix_5.15.legacy.patch --retry 5 --retry-delay 2 --retry-connrefused https://raw.githubusercontent.com/Luffy-456/SukiSU_Kernel_Nord4/refs/heads/main/patches/fix_5.15.legacy
             patch -p1 < fix_5.15.legacy.patch
             echo "fix_5.15_patch complete"
           fi
@@ -435,7 +435,7 @@ jobs:
         run: |
           cd kernel_workspace/kernel_platform/common
           sed -i '1iobj-y += hmbird_patch.o' drivers/Makefile
-          wget https://github.com/Numbersf/Action-Build/raw/SukiSU-Ultra/patches/hmbird_patch.patch
+          wget https://github.com/Luffy-456/SukiSU_Kernel_Nord4/raw/main/patches/hmbird_patch.patch
           echo "Applying OGKI to GKI conversion patch"
           patch -p1 -F 3 < hmbird_patch.patch
           echo "OGKI_to_GKI_conversion_patch complete"
@@ -611,7 +611,7 @@ jobs:
           fi
       - name: Make AnyKernel3
         run: |
-          git clone https://github.com/Numbersf/AnyKernel3 --depth=1
+          git clone https://github.com/Luffy-456/AnyKernel3.git --depth=1
           rm -rf ./AnyKernel3/.git
           mkdir -p kernel_workspace/kernel_platform/out/FinalImageFind/
           dir1=""
@@ -653,7 +653,7 @@ jobs:
         if: ${{ github.event.inputs.KPM == 'true' }}
         run: |
           cd kernel_workspace/kernel_platform/out/FinalImageFind
-          curl -LO --retry 5 --retry-delay 2 --retry-connrefused https://raw.githubusercontent.com/Numbersf/Action-Build/SukiSU-Ultra/patches/patch_linux
+          curl -LO --retry 5 --retry-delay 2 --retry-connrefused https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU_patch/main/kpm/patch_linux
           chmod +x patch_linux
           ./patch_linux
           rm -f Image
