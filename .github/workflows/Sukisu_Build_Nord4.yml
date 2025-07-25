@@ -9,7 +9,6 @@ on:
         default: oneplus_nord_4_v
         options:
           - oneplus_nord_4_v
-          - oneplus_ace_3v_v
       SUSFS_CI:
         type: choice
         description: "SUSFS module download method"
@@ -107,7 +106,6 @@ jobs:
           # Define valid combinations with base model only (no _v/_t/_u...)
           declare -A VALID_COMBINATIONS=(
             ["oneplus_nord_4"]="sm7675 pineapple android14 6.1"
-            ["oneplus_ace_3v"]="sm7675 pineapple android14 6.1"
           )
           # Recursively strip "_[a-z]+" suffixes to match base key
           get_combination() {
