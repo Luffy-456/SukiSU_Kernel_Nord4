@@ -48,11 +48,6 @@ on:
         description: "Enable Kernel Patch Module (KPM)?"
         required: true
         default: true
-      SCHED:
-        type: boolean
-        description: "Add FengChi driver for flashing gaming feature still in Beta?"
-        required: true
-        default: false
       ZRAM:
         type: boolean
         description: "Add more ZRAM algorithms?"
@@ -76,18 +71,27 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           message: |
-            *🚀 Build Initiated*
-            ------------------------------------
-            *Workflow:* `${{ github.workflow }}`
-            *Run:* `#${{ github.run_number }}`
-            *Triggered by:* `${{ github.triggering_actor }}`
-            *Commit:* `${{ github.sha }}`
-            *Started at:* `${{ steps.get_time.outputs.timestamp }}` IST
-            ------------------------------------
-            [View Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            🚀 **Kernel Build Started!**
+
+            ───────────────
+            📦 **Workflow:** `${{ github.workflow }}`
+            🏷️ **Run ID:** `#${{ github.run_number }}`
+            👤 **Actor:** `${{ github.triggering_actor }}`
+            🔀 **Commit:** `${{ github.sha }}`
+            🗂️ **Config File:** `${{ github.event.inputs.FILE }}`
+            🔧 **Build Options:**
+                - Suffix: `${{ github.event.inputs.SUFFIX }}`
+                - Fast Build: `${{ github.event.inputs.FAST_BUILD }}`
+                - VFS: `${{ github.event.inputs.VFS }}`
+                - KPM: `${{ github.event.inputs.KPM }}`
+                - ZRAM: `${{ github.event.inputs.ZRAM }}`
+            🕒 **Started:** `${{ steps.get_time.outputs.timestamp }}` IST
+            ───────────────
+            👉 [View Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
   build:
     needs: notify_start
-    name: ${{ github.event.inputs.FAST_BUILD == 'true' && ' [FAST]' || '' }}${{ github.event.inputs.SCHED == 'true' && ' [SCHED]' || '' }}${{ github.event.inputs.ZRAM == 'true' && ' [ZRAM]' || '' }}For ${{ github.event.inputs.FILE }} ${{ github.event.inputs.SUFFIX }}
+    name: ${{ github.event.inputs.FAST_BUILD == 'true' && ' [FAST]' || '' }}${{ github.event.inputs.ZRAM == 'true' && ' [ZRAM]' || '' }}For ${{ github.event.inputs.FILE }} ${{ github.event.inputs.SUFFIX }}
     runs-on: ubuntu-latest
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
@@ -209,7 +213,6 @@ jobs:
           echo "Selected VFS: ${{ github.event.inputs.VFS }}"
           echo "Selected KPM: ${{ github.event.inputs.KPM }}"
           echo "Selected FAST_BUILD: ${{ github.event.inputs.FAST_BUILD }}"
-          echo "Selected SCHED: ${{ github.event.inputs.SCHED }}"
           echo "Selected ZRAM: ${{ github.event.inputs.ZRAM }}"
       - name: Install Dependencies
         run: |
@@ -519,15 +522,7 @@ jobs:
           fi
           # Remove build review
           sed -i 's/check_defconfig//' ./common/build.config.gki
-      # FengChi kernel, based on sm8750, may not work or perform on other CPUs
-      - name: Add sched_ext
-        if: ${{ github.event.inputs.SCHED == 'true' }}
-        run: |
-          cd kernel_workspace/kernel_platform/
-          git clone https://github.com/HanKuCha/sched_ext.git
-          cp -r ./sched_ext/* ./common/kernel/sched
-          rm -rf ./sched_ext/.git
-          cd common/kernel/sched
+
       # Custom kernel build time, do not add #1 SMP PREEMPT
       - name: Custom BUILD_TIME
         if: ${{ github.event.inputs.BUILD_TIME != '' && !contains('Ff', github.event.inputs.BUILD_TIME) }}
@@ -661,7 +656,7 @@ jobs:
       - name: Set zip Suffix
         id: suffix
         run: |
-          echo "value=${{ github.event.inputs.VFS == 'true' && '_VFS' || '' }}${{ github.event.inputs.ZRAM == 'true' && '_LZ4KD' || '' }}${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.SCHED== 'true' && '_SCHED' || '' }}" >> $GITHUB_OUTPUT
+          echo "value=${{ github.event.inputs.VFS == 'true' && '_VFS' || '' }}${{ github.event.inputs.ZRAM == 'true' && '_LZ4KD' || '' }}${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}" >> $GITHUB_OUTPUT
       # Get the applicable Android version information from the OnePlus source code.
       # Note that this is the system Android version, not the kernel Android version you entered.
       # This step may need to be modified or deleted for non-OnePlus official source code.
