@@ -1,9 +1,14 @@
 name: Create Kernel Release GitHub
+
 on:
   workflow_dispatch:
     inputs:
       build_run_url:
         description: 'URL of the successful build run (e.g., https://github.com/user/repo/actions/runs/12345)'
+        required: true
+        type: string
+      firmware_version:
+        description: 'Firmware version this kernel is intended for (e.g., 15.0.0.702)'
         required: true
         type: string
 
@@ -19,7 +24,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       release_tag: ${{ steps.generate_tag.outputs.tag }}
-      telegram_notes: ${{ steps.prep_telegram_notes.outputs.notes }} # <-- CHANGE: Outputting the special Telegram notes
+      telegram_notes: ${{ steps.prep_telegram_notes.outputs.notes }}
 
     steps:
       - name: 1. Parse Run ID from URL
@@ -31,7 +36,6 @@ jobs:
             exit 1
           fi
           RUN_ID=$(basename "$BUILD_URL")
-          echo "Extracted Run ID: $RUN_ID"
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
       - name: 2. Send Start Notification
@@ -41,24 +45,27 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           message: |
-            *🚀 Manual Release Process Started*
-            ------------------------------------
-            Downloading artifacts from Run ID: `${{ steps.parse_url.outputs.run_id }}`
-            [View Release Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            🚀 **Manual Kernel Release Started**
+
+            ____
+            🏁 **Downloading artifacts from:**  
+            [Run ID `${{ steps.parse_url.outputs.run_id }}`](${{ github.event.inputs.build_run_url }})
+
+            👤 **Maintainer:** `${{ github.triggering_actor }}`
+            🔗 [View This Release Process](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            ____
 
       - name: 3. Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 4. Generate IST Release Tag
+      - name: 4. Generate Pretty Release Tag
         id: generate_tag
         run: |
-          TAG="oneplus_nord_4-$(date +'%Y-%m-%d_%H-%M')-IST"
-          echo "Generated Tag: $TAG"
+          TAG="NikaKernel-OnePlusNordCE4-v$(date +'%Y.%m.%d-%H%M')-IST"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: 5. Download Build Artifacts
         run: |
-          echo "Downloading artifacts from Run ID ${{ steps.parse_url.outputs.run_id }}..."
           gh run download ${{ steps.parse_url.outputs.run_id }} --dir ./downloaded-artifacts --repo ${{ github.repository }}
 
       - name: 6. Display Downloaded Artifact Structure
@@ -73,64 +80,76 @@ jobs:
               (cd "$dir" && zip -r9 "$GITHUB_WORKSPACE/final-zips/${ARTIFACT_NAME}.zip" .)
             fi
           done
-      
-      # <-- CHANGE: This step now ONLY prepares notes for the GitHub Release page.
+
       - name: 8. Prepare GitHub Release Notes
         id: prep_github_notes
         run: |
-          NOTES=$(cat <<'EOF'
-          ## EOL RELEASE FOR 15.0.0.702 KERNEL 
-          ### SukiSU Ultra Kernel for OnePlus Nord 4
-          
-          #### Flash this kernel on 15.0.0.702
-          
-          **Flasher Recommendation:**
-          * [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
-          
-          **Manager App:**
-          * [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
+          NOTES=$(cat <<EOF
+          # 🏁 Release SukiSU Ultra Kernel for OnePlus Nord CE 4
 
-          **Sufs Module:**
-          * [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
+          > **Flash this kernel on:** \`${GITHUB_FIRMWARE_VERSION}\`
+
+          ## 🛠 Flasher Recommendation
+          - [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
+
+          ## 📱 SukiSU-Ultra Manager
+          - [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
+
+          ## 🔌 Susfs Module
+          - [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
           EOF
           )
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_FIRMWARE_VERSION: ${{ github.event.inputs.firmware_version }}
 
-      # <-- CHANGE: This is a NEW step to prepare the separate, Telegram-safe notes.
       - name: 9. Prepare Telegram Notification Notes
         id: prep_telegram_notes
         run: |
-          NOTES=$(cat <<'EOF'
-          *EOL RELEASE FOR 15.0.0.702 KERNEL*
-          
-          *SukiSU Ultra Kernel for OnePlus Nord 4*
-          
-          *Flash this kernel on 15.0.0.702*
-          
-          *Flasher Recommendation:*
+          NOTES=$(cat <<EOF
+          🎉 **NEW RELEASE!**
+
+          ━━━━━━━━━━━━━━━━━━━━
+          🏆 **Device:** OnePlus Nord CE 4  
+          🧬 **Variant:** SukiSU Ultra  
+          🗓 **Release Tag:** \`${{ steps.generate_tag.outputs.tag }}\`
+
+          ━━━━━━━━━━━━━━━━━━━━
+          🌟 **Release for ${GITHUB_FIRMWARE_VERSION} Kernel**  
+          _Ready to flash on firmware version:_ \`${GITHUB_FIRMWARE_VERSION}\`
+
+          ━━━━━━━━━━━━━━━━━━━━
+          🛠 **Flash Toolkit**  
           • [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
-          
-          *Manager App:*
+
+          ━━━━━━━━━━━━━━━━━━━━
+          📱 **SukiSU-Ultra Manager**  
           • [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
 
-          *Sufs Module:*
+          ━━━━━━━━━━━━━━━━━━━━
+          🔌 **Susfs Module**  
           • [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
+
+          ━━━━━━━━━━━━━━━━━━━━
+          👤 **Maintainer:** LuffyOP⚡  
+          🔗 [⬇️ Download Release](https://github.com/${{ github.repository }}/releases/tag/${{ steps.generate_tag.outputs.tag }})
           EOF
           )
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_FIRMWARE_VERSION: ${{ github.event.inputs.firmware_version }}
 
-      # <-- CHANGE: This step now uses the GitHub-specific notes from step 8.
       - name: 10. Create GitHub Release and Upload Zips
         run: |
           gh release create "${{ steps.generate_tag.outputs.tag }}" \
             --title "Kernel Release - $(date +'%d %B %Y')" \
             --notes "${{ steps.prep_github_notes.outputs.notes }}" \
             ./final-zips/*.zip
-  
+
   notify_result:
     name: Notify Final Release Status
     needs: release
@@ -143,20 +162,17 @@ jobs:
           to: ${{ needs.release.result == 'success' && secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES && secrets.TELEGRAM_CHAT_ID_PERSONAL }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
-          # <-- CHANGE: The message now correctly uses the special 'telegram_notes' output.
           message: |
-            ${{ needs.release.result == 'success' && format('🎉 *New Kernel Release!*
-            ------------------------------------
-            A new kernel for *OnePlus Nord 4* has been successfully released.
+            ${{ needs.release.result == 'success' && format(
+              '{0}',
+              needs.release.outputs.telegram_notes
+            ) }}
 
-            {2}
-
-            *Release Tag:* `{0}`
-            ------------------------------------
-            [⬇️ Download from GitHub Releases](https://github.com/{1}/releases/tag/{0})', needs.release.outputs.release_tag, github.repository, needs.release.outputs.telegram_notes) || '' }}
-
-            ${{ needs.release.result == 'failure' && format('❌ *Release Failed!*
-            ------------------------------------
-            The final step of creating the GitHub Release failed. Check the logs for details.
-            [View Logs](https://github.com/{0}/actions/runs/{1})', github.repository, github.run_id) || '' }}
-            
+            ${{ needs.release.result == 'failure' && format(
+              "❌ *Release Failed!*
+              ————————————————
+              The final step of creating the GitHub Release failed.  
+              [View Logs](https://github.com/{0}/actions/runs/{1})",
+              github.repository,
+              github.run_id
+            ) }}
