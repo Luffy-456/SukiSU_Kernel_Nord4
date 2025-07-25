@@ -1,4 +1,4 @@
-name: Create Kernel Release GitHub
+name: Release Git & TG
 
 on:
   workflow_dispatch:
@@ -156,23 +156,44 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Send Final Release Notification
+      - name: Notify on Success
+        if: ${{ needs.release.result == 'success' }}
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ needs.release.result == 'success' && secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES && secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES }},${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           message: |
-            ${{ needs.release.result == 'success' && format(
-              '{0}',
-              needs.release.outputs.telegram_notes
-            ) }}
+            🎉 **Release Successful!**
+            ━━━━━━━━━━━━━━━━━━━━
+            The kernel release completed and all artifacts have been published.
 
-            ${{ needs.release.result == 'failure' && format(
-              "❌ *Release Failed!*
-              ————————————————
-              The final step of creating the GitHub Release failed.  
-              [View Logs](https://github.com/{0}/actions/runs/{1})",
-              github.repository,
-              github.run_id
-            ) }}
+            ${{ needs.release.outputs.telegram_notes }}
+
+      - name: Notify on Failure
+        if: ${{ needs.release.result == 'failure' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES }},${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            ❌ *Release Failed!*
+            ━━━━━━━━━━━━━━━━━━━━
+            The final step of creating the GitHub Release failed.
+
+            [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: Notify on Cancelled
+        if: ${{ needs.release.result == 'cancelled' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID_LUFFYOP_UPDATES }},${{ secrets.TELEGRAM_CHAT_ID_PERSONAL }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            ⚠️ *Release Cancelled!*
+            ━━━━━━━━━━━━━━━━━━━━
+            The GitHub Release workflow was cancelled.
+
+            [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
