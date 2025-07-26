@@ -84,7 +84,7 @@ jobs:
       - name: 8. Prepare GitHub Release Notes
         run: |
           NOTES=$(cat <<EOF
-          # 🏁 Release SukiSU Ultra Kernel for OnePlus Nord CE 4
+          # 🏁 Release JoyBoy Kernel for OnePlus Nord 4
       
           > **Flash this kernel on:** \`${GITHUB_FIRMWARE_VERSION}\`
       
@@ -110,8 +110,9 @@ jobs:
           🎉 **NEW RELEASE!**
 
           ━━━━━━━━━━━━━━━━━━━━
-          🏆 **Device:** OnePlus Nord CE 4  
-          🧬 **Variant:** SukiSU Ultra  
+          🏆 **Device:** OnePlus Nord 4  
+          🧬 **Kernel Name:** JOYBOY KERNEL
+          🧬 **Root Method:** SukiSU Ultra  
           🗓 **Release Tag:** \`${{ steps.generate_tag.outputs.tag }}\`
 
           ━━━━━━━━━━━━━━━━━━━━
