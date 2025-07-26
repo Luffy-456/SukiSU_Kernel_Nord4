@@ -2,7 +2,7 @@ name: Send Build Notifications
 
 on:
   workflow_run:
-    workflows: ["Build OnePlus Nord 4 SukiSU Ultra Kernel"] # Replace with your build workflow's name
+    workflows: ["Stock Build OnePlus Nord 4 SukiSU Ultra Kernel"] # Replace with your build workflow's name
     types:
       - completed
 
