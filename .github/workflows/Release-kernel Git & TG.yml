@@ -130,7 +130,11 @@ jobs:
           ━━━━━━━━━━━━━━━━━━━━
           🔌 **Susfs Module**  
           • [Susfs Module](https://github.com/sidex15/susfs4ksu-module/releases)
-
+          
+          ━━━━━━━━━━━━━━━━━━━━
+          💀 **Flashing Tutorial**
+          • [Flashing Tutorial](https://t.me/LuffyConnect/7522)
+          
           ━━━━━━━━━━━━━━━━━━━━
           👤 **Maintainer:** LuffyOP⚡  
           🔗 [⬇️ Download Release](https://github.com/${{ github.repository }}/releases/tag/${{ steps.generate_tag.outputs.tag }})
