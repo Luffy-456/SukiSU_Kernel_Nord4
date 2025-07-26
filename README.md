@@ -7,8 +7,6 @@
 
 * Bootloader Unlocked 🔓
 
-* 6.1.75 Kernel based 
-
 * To know on which version of OxygenOS you can flash. Check the release notes of the respected kernel
  
 * Working Brain 🧠
