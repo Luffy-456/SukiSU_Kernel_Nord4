@@ -1,4 +1,4 @@
-name: Build OnePlus Nord 4 SukiSU Ultra Kernel
+name: Stock Build OnePlus Nord 4 SukiSU Ultra Kernel
 on:
   workflow_dispatch:
     inputs:
@@ -32,7 +32,7 @@ on:
         type: string
         description: "Custom kernel suffix (leave empty for a random string)"
         required: false
-        default: "LuffyOP⚡_SukiSU"
+        default: "JoyBoy⚡_Kernel"
       FAST_BUILD:
         type: boolean
         description: "Enable fast build?"
